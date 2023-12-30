@@ -33,17 +33,26 @@ public class Person {
     }
 
     public Person(String firstName, String lastName, ZonedDateTime dob) {
-        this.firstName=firstName;
-        this.lastName=lastName;
-        this.dob=dob;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dob = dob;
     }
 
     public Long getId() {
         return this.id;
     }
 
-
     public void setId(long id) {
-        this.id=id;
+        this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", dob=" + dob +
+                ", id=" + id +
+                '}';
     }
 }
