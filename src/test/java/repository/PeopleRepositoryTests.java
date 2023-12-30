@@ -73,4 +73,21 @@ public class PeopleRepositoryTests {
         assertThat(foundPerson).isEmpty();
     }
 
+    @Test
+    void canDelete() {
+        Person savedPerson = repo.save(new Person("test", "jackson", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
+        repo.delete(savedPerson.getId());
+        Optional<Person> personFromDB = repo.findById(savedPerson.getId());
+        assertThat(personFromDB).isEmpty();
+    }
+
+    @Test
+    void canDeleteMultiplePeople() {
+        Person person1 = repo.save(new Person("test1", "jackson1", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
+        Person person2 = repo.save(new Person("test2", "jackson2", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
+
+        repo.delete(person1, person2);
+
+    }
+
 }
