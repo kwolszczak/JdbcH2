@@ -1,5 +1,6 @@
 package dev.kwolszczak.peopledb.repository;
 
+import dev.kwolszczak.peopledb.annotation.MultiSQL;
 import dev.kwolszczak.peopledb.annotation.SQL;
 import dev.kwolszczak.peopledb.exception.UnableToSaveException;
 import dev.kwolszczak.peopledb.model.Entity;
@@ -8,6 +9,7 @@ import java.sql.*;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class CRUDRepository<T extends Entity> {
 
@@ -19,9 +21,11 @@ public abstract class CRUDRepository<T extends Entity> {
 
     public T save(T entity) {
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("mapForSave"), Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.SAVE), Statement.RETURN_GENERATED_KEYS);
             mapForSave(entity, ps);
+
             int recordsAffected = ps.executeUpdate();
+
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -38,8 +42,9 @@ public abstract class CRUDRepository<T extends Entity> {
 
     public Optional<T> findById(Long id) {
         T entity = null;
+
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("extractEntityFromResultSet"));
+            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.FIND_BY_ID));
             ps.setLong(1, id);
             ResultSet rs = ps.executeQuery();
 
@@ -54,9 +59,10 @@ public abstract class CRUDRepository<T extends Entity> {
         return Optional.ofNullable(entity);
     }
 
+
     public void update(T entity) {
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("mapForUpdate"));
+            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.UPDATE));
             mapForUpdate(entity, ps);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -64,15 +70,17 @@ public abstract class CRUDRepository<T extends Entity> {
         }
     }
 
+
     public void delete(Long id) {
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("delete"));
+            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.DELETE));
             ps.setLong(1, id);
             boolean rs = ps.execute();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     public void delete(T... entities) throws SQLException {
@@ -86,7 +94,6 @@ public abstract class CRUDRepository<T extends Entity> {
 //            delete(entities);
         }*/
     }
-
     /**
      * @param rs
      * @return Returns a String that represents the SQL needed to retrieve one entity.
@@ -94,18 +101,30 @@ public abstract class CRUDRepository<T extends Entity> {
      */
     abstract T mapForFind(ResultSet rs) throws SQLException;
 
-    abstract void mapForDelete(Statement statement, String ids) throws SQLException;
+    abstract void mapForDelete(Statement statement, String ids) throws SQLException ;
 
     abstract void mapForUpdate(T entity, PreparedStatement ps) throws SQLException;
 
     abstract void mapForSave(T entity, PreparedStatement ps) throws SQLException;
 
-    private String getSQLFromAnnotation(String methodName) {
-        return Arrays.stream(this.getClass().getDeclaredMethods())
-                .filter((method -> method.getName().equals(methodName)))
-                .map(method -> method.getAnnotation(SQL.class))
+    private String getSQLFromAnnotation(CrudOperation operationType){
+
+        //for method with 2 or more Annotations @SQL
+        Stream<SQL> multiSqlStream = Arrays.stream(this.getClass().getDeclaredMethods())
+                .filter(method -> method.isAnnotationPresent(MultiSQL.class))
+                .map(method -> method.getAnnotation(MultiSQL.class))
+                .flatMap(multiSQL -> Arrays.stream(multiSQL.value()));
+
+        //for method with only one Annotation @SQL
+        Stream<SQL> sqlStream = Arrays.stream(this.getClass().getDeclaredMethods())
+                .filter(method -> method.isAnnotationPresent(SQL.class))
+                .map(method -> method.getAnnotation(SQL.class));
+
+        return Stream.concat(sqlStream, multiSqlStream)
+                .filter(sql -> sql.operationType().equals(operationType))
                 .map(SQL::value)
                 .findFirst().orElse("");
     }
+
 
 }

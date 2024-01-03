@@ -20,7 +20,8 @@ public class PeopleRepository extends CRUDRepository<Person> {
     }
 
     @Override
-    @SQL(SAVE_PERSON_SQL)
+    @SQL(value = SAVE_PERSON_SQL , operationType = CrudOperation.SAVE)
+    @SQL(value = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB) VALUES (?, ?, ?)" , operationType = CrudOperation.SAVE)
     void mapForSave(Person entity, PreparedStatement ps) throws SQLException {
         ps.setString(1, entity.getFirstName());
         ps.setString(2, entity.getLastName());
@@ -28,7 +29,7 @@ public class PeopleRepository extends CRUDRepository<Person> {
     }
 
     @Override
-    @SQL(UPDATE_PERSON_SQL)
+    @SQL(value = UPDATE_PERSON_SQL, operationType = CrudOperation.UPDATE)
     void mapForUpdate(Person entity, PreparedStatement ps) throws SQLException {
         ps.setString(1, entity.getFirstName());
         ps.setString(2, entity.getLastName());
@@ -41,7 +42,7 @@ public class PeopleRepository extends CRUDRepository<Person> {
     }
 
     @Override
-    @SQL(FIND_PERSON_SQL)
+    @SQL(value = FIND_PERSON_SQL, operationType = CrudOperation.FIND_BY_ID)
     Person mapForFind(ResultSet rs) throws SQLException {
         long personId = 0;
         personId = rs.getLong("ID");
@@ -55,7 +56,7 @@ public class PeopleRepository extends CRUDRepository<Person> {
     }
 
     @Override
-    @SQL(DELETE_PERSON_SQL)
+    @SQL(value = DELETE_PERSON_SQL, operationType = CrudOperation.DELETE)
     public void delete(Long id) {
         super.delete(id);
     }
