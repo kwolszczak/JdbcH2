@@ -42,7 +42,7 @@ public class PeopleRepository extends CRUDRepository<Person> {
 
     @Override
     @SQL(FIND_PERSON_SQL)
-    Person extractEntityFromResultSet(ResultSet rs) throws SQLException {
+    Person mapForFind(ResultSet rs) throws SQLException {
         long personId = 0;
         personId = rs.getLong("ID");
         String firstName = rs.getString("FIRST_NAME");

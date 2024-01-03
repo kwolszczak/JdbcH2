@@ -21,9 +21,7 @@ public abstract class CRUDRepository<T extends Entity> {
         try {
             PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("mapForSave"), Statement.RETURN_GENERATED_KEYS);
             mapForSave(entity, ps);
-
             int recordsAffected = ps.executeUpdate();
-
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -40,14 +38,13 @@ public abstract class CRUDRepository<T extends Entity> {
 
     public Optional<T> findById(Long id) {
         T entity = null;
-
         try {
             PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("extractEntityFromResultSet"));
             ps.setLong(1, id);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                entity = extractEntityFromResultSet(rs);
+                entity = mapForFind(rs);
             }
             System.out.println(entity);
 
@@ -57,7 +54,6 @@ public abstract class CRUDRepository<T extends Entity> {
         return Optional.ofNullable(entity);
     }
 
-
     public void update(T entity) {
         try {
             PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("mapForUpdate"));
@@ -66,9 +62,7 @@ public abstract class CRUDRepository<T extends Entity> {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
-
 
     public void delete(Long id) {
         try {
@@ -79,7 +73,6 @@ public abstract class CRUDRepository<T extends Entity> {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     public void delete(T... entities) throws SQLException {
@@ -93,26 +86,26 @@ public abstract class CRUDRepository<T extends Entity> {
 //            delete(entities);
         }*/
     }
+
     /**
      * @param rs
      * @return Returns a String that represents the SQL needed to retrieve one entity.
      * The SQL must contain one SQL parameter, i.e. "?", that will bind to the entity's ID
      */
-    abstract T extractEntityFromResultSet(ResultSet rs) throws SQLException;
+    abstract T mapForFind(ResultSet rs) throws SQLException;
 
-    abstract void mapForDelete(Statement statement, String ids) throws SQLException ;
+    abstract void mapForDelete(Statement statement, String ids) throws SQLException;
 
     abstract void mapForUpdate(T entity, PreparedStatement ps) throws SQLException;
 
     abstract void mapForSave(T entity, PreparedStatement ps) throws SQLException;
 
-    private String getSQLFromAnnotation(String methodName){
+    private String getSQLFromAnnotation(String methodName) {
         return Arrays.stream(this.getClass().getDeclaredMethods())
-                .filter((method->method.getName().equals(methodName)))
-                .map(method-> method.getAnnotation(SQL.class))
+                .filter((method -> method.getName().equals(methodName)))
+                .map(method -> method.getAnnotation(SQL.class))
                 .map(SQL::value)
                 .findFirst().orElse("");
     }
-
 
 }
