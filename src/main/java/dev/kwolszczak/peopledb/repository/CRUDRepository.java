@@ -72,7 +72,7 @@ public abstract class CRUDRepository<T extends Entity> {
 
     public void delete(Long id) {
         try {
-            PreparedStatement ps = connection.prepareStatement(getDeleteSql());
+            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation("delete"));
             ps.setLong(1, id);
             boolean rs = ps.execute();
 
@@ -115,5 +115,4 @@ public abstract class CRUDRepository<T extends Entity> {
     }
 
 
-    abstract String getDeleteSql();
 }

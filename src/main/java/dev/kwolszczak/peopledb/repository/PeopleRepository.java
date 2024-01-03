@@ -54,9 +54,10 @@ public class PeopleRepository extends CRUDRepository<Person> {
         return entity;
     }
 
-
     @Override
-    protected String getDeleteSql() {
-        return DELETE_PERSON_SQL;
+    @SQL(DELETE_PERSON_SQL)
+    public void delete(Long id) {
+        super.delete(id);
     }
+
 }
