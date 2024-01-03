@@ -3,6 +3,7 @@ package repository;
 import dev.kwolszczak.peopledb.model.Person;
 import dev.kwolszczak.peopledb.repository.PeopleRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -82,12 +83,29 @@ public class PeopleRepositoryTests {
     }
 
     @Test
-    void canDeleteMultiplePeople() {
+    void canDeleteMultiplePeople() throws SQLException {
         Person person1 = repo.save(new Person("test1", "jackson1", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
         Person person2 = repo.save(new Person("test2", "jackson2", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
 
         repo.delete(person1, person2);
+    }
 
+    @Test
+    void canUpdate() {
+
+        Person person = new Person("tom", "johnson", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0")));
+        Person savedPerson = repo.save(person);
+        Person foundPerson = repo.findById(savedPerson.getId()).get();
+
+        person.setFirstName("Bubu");
+        person.setLastName("Mimi");
+        repo.update(person);
+
+        Person foundPerson2 = repo.findById(savedPerson.getId()).get();
+        assertThat(person.getLastName())
+//                .usingRecursiveAssertion()
+//                .ignoringFields("dob")
+                .isEqualTo(foundPerson2.getLastName());
     }
 
 }

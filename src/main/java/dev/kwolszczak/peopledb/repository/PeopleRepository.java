@@ -1,107 +1,62 @@
 package dev.kwolszczak.peopledb.repository;
 
-import dev.kwolszczak.peopledb.exception.UnableToSaveException;
+import dev.kwolszczak.peopledb.annotation.SQL;
 import dev.kwolszczak.peopledb.model.Person;
 
 import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class PeopleRepository {
-    public static final String SAVE_PERSON_SQL = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB) VALUES (?, ?, ?)";
-    public static final String FIND_PERSON_SQL = "SELECT ID, FIRST_NAME, LAST_NAME, DOB FROM PEOPLE WHERE ID = ?";
-    private Connection connection;
-    private String DELETE_PERSON_SQL;
+public class PeopleRepository extends CRUDRepository<Person> {
+    private static final String SAVE_PERSON_SQL = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB) VALUES (?, ?, ?)";
+    private static final String FIND_PERSON_SQL = "SELECT ID, FIRST_NAME, LAST_NAME, DOB FROM PEOPLE WHERE ID = ?";
+    private static final String DELETE_PERSON_SQL = "DELETE FROM PEOPLE WHERE ID = ?";
+    private static final String UPDATE_PERSON_SQL = "UPDATE PEOPLE SET FIRST_NAME=?, LAST_NAME=? WHERE ID =?";
 
     public PeopleRepository(Connection con) {
-        this.connection = con;
-
+        super(con);
     }
 
-    public Person save(Person person) {
-        try {
-            PreparedStatement ps = connection.prepareStatement(SAVE_PERSON_SQL, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, person.getFirstName());
-            ps.setString(2, person.getLastName());
-            ps.setTimestamp(3, Timestamp.valueOf(person.getDob().withZoneSameInstant(ZoneId.of("+0")).toLocalDateTime()));
-
-            int recordsAffected = ps.executeUpdate();
-
-            ResultSet rs = ps.getGeneratedKeys();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                person.setId(id);
-            }
-            System.out.println(person);
-            System.out.println(STR."Records affected: \{recordsAffected}");
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new UnableToSaveException(STR."Tried to save person:\{person}");
-        }
-
-        return person;
+    @Override
+    @SQL(SAVE_PERSON_SQL)
+    void mapForSave(Person entity, PreparedStatement ps) throws SQLException {
+        ps.setString(1, entity.getFirstName());
+        ps.setString(2, entity.getLastName());
+        ps.setTimestamp(3, Timestamp.valueOf(entity.getDob().withZoneSameInstant(ZoneId.of("+0")).toLocalDateTime()));
     }
 
-    public Optional<Person> findById(Long id) {
-        Person person = null;
-
-        try {
-
-            PreparedStatement ps = connection.prepareStatement(FIND_PERSON_SQL);
-            ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-
-                long personId = rs.getLong("ID");
-                String firstName = rs.getString("FIRST_NAME");
-                String lastName = rs.getString("LAST_NAME");
-                ZonedDateTime dob = ZonedDateTime.of(rs.getTimestamp("DOB").toLocalDateTime(), ZoneId.of("+0"));
-                person = new Person(firstName, lastName, dob);
-                person.setId(personId);
-            }
-            System.out.println(person);
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return Optional.ofNullable(person);
+    @Override
+    @SQL(UPDATE_PERSON_SQL)
+    void mapForUpdate(Person entity, PreparedStatement ps) throws SQLException {
+        ps.setString(1, entity.getFirstName());
+        ps.setString(2, entity.getLastName());
+        ps.setLong(3, entity.getId());
     }
 
-    public void delete(Long id) {
-        try {
-            DELETE_PERSON_SQL = "DELETE FROM PEOPLE WHERE ID = ?";
-            PreparedStatement ps = connection.prepareStatement(DELETE_PERSON_SQL);
-            ps.setLong(1, id);
-            boolean rs = ps.execute();
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
+    @Override
+    void mapForDelete(Statement statement, String ids) throws SQLException {
+        statement.execute(STR."DELETE FROM PEOPLE WHERE ID IN (\{ids});");
     }
 
-    public void delete(Person... people) {
-        //delete from people where id in ( 10,20,30,40);
-        try {
-            String ids = Arrays.stream(people)
-                    .map(Person::getId)
-                    .map(String::valueOf)
-                    .collect(Collectors.joining(","));
-            Statement statement = connection.createStatement();
-            statement.execute(STR."DELETE FROM PEOPLE WHERE ID IN (\{ids});");
+    @Override
+    @SQL(FIND_PERSON_SQL)
+    Person extractEntityFromResultSet(ResultSet rs) throws SQLException {
+        long personId = 0;
+        personId = rs.getLong("ID");
+        String firstName = rs.getString("FIRST_NAME");
+        String lastName = rs.getString("LAST_NAME");
+        ZonedDateTime dob = ZonedDateTime.of(rs.getTimestamp("DOB").toLocalDateTime(), ZoneId.of("+0"));
+        Person entity = new Person(firstName, lastName, dob);
+        entity.setId(personId);
 
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return entity;
+    }
 
-/*        for (var person : people) {
-//            delete(people);
 
-        }*/
+    @Override
+    protected String getDeleteSql() {
+        return DELETE_PERSON_SQL;
     }
 }

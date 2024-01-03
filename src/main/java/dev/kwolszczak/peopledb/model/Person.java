@@ -1,11 +1,12 @@
 package dev.kwolszczak.peopledb.model;
 
+
 import java.time.ZonedDateTime;
 
-public class Person {
+public class Person implements Entity  {
     private String firstName;
     private String lastName;
-    private ZonedDateTime dob;
+     ZonedDateTime dob;
     private long id;
 
     public void setFirstName(String firstName) {
@@ -38,10 +39,12 @@ public class Person {
         this.dob = dob;
     }
 
+    @Override
     public Long getId() {
         return this.id;
     }
 
+    @Override
     public void setId(long id) {
         this.id = id;
     }
