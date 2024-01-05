@@ -1,13 +1,41 @@
 package dev.kwolszczak.peopledb.model;
 
 
+import dev.kwolszczak.peopledb.annotation.Id;
+
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 public class Person implements Entity  {
+    @Id
+    private long id;
     private String firstName;
     private String lastName;
-     ZonedDateTime dob;
-    private long id;
+    private ZonedDateTime dob;
+    private BigDecimal salary = new BigDecimal("0");
+    private String email;
+
+    public Person(String firstName, String lastName, ZonedDateTime dob) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dob = dob;
+    }
+
+    public BigDecimal getSalary() {
+        return salary;
+    }
+
+    public void setSalary(BigDecimal salary) {
+        this.salary = salary;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
@@ -30,12 +58,6 @@ public class Person implements Entity  {
     }
 
     public void setDob(ZonedDateTime dob) {
-        this.dob = dob;
-    }
-
-    public Person(String firstName, String lastName, ZonedDateTime dob) {
-        this.firstName = firstName;
-        this.lastName = lastName;
         this.dob = dob;
     }
 

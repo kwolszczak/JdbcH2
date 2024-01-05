@@ -1,5 +1,6 @@
 package dev.kwolszczak.peopledb.repository;
 
+import dev.kwolszczak.peopledb.annotation.Id;
 import dev.kwolszczak.peopledb.annotation.MultiSQL;
 import dev.kwolszczak.peopledb.annotation.SQL;
 import dev.kwolszczak.peopledb.exception.UnableToSaveException;
@@ -31,8 +32,8 @@ public abstract class CRUDRepository<T extends Entity> {
                 long id = rs.getLong(1);
                 entity.setId(id);
             }
-            System.out.println(entity);
-            System.out.println(STR."Records affected: \{recordsAffected}");
+          //  System.out.println(entity);
+           // System.out.println(STR."Records affected: \{recordsAffected}");
         } catch (SQLException e) {
             e.printStackTrace();
             throw new UnableToSaveException(STR."Tried to save entity:\{entity}");
@@ -70,18 +71,30 @@ public abstract class CRUDRepository<T extends Entity> {
         }
     }
 
+    private Long getIdByAnnotation(T entity) {
+        return Arrays.stream(entity.getClass().getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(Id.class))
+                .map(field -> {
+                    try {
+                        field.setAccessible(true);
+                        return field.getLong(entity);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .findFirst().orElseThrow(() -> new RuntimeException("No ID annotated with @ID"));
+    }
 
-    public void delete(Long id) {
+    public void delete(T entity) {
         try {
             PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.DELETE));
-            ps.setLong(1, id);
+            ps.setLong(1, getIdByAnnotation(entity));
             boolean rs = ps.execute();
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
+
 
     public void delete(T... entities) throws SQLException {
         String ids = Arrays.stream(entities)
@@ -94,6 +107,7 @@ public abstract class CRUDRepository<T extends Entity> {
 //            delete(entities);
         }*/
     }
+
     /**
      * @param rs
      * @return Returns a String that represents the SQL needed to retrieve one entity.
@@ -101,13 +115,13 @@ public abstract class CRUDRepository<T extends Entity> {
      */
     abstract T mapForFind(ResultSet rs) throws SQLException;
 
-    abstract void mapForDelete(Statement statement, String ids) throws SQLException ;
+    abstract void mapForDelete(Statement statement, String ids) throws SQLException;
 
     abstract void mapForUpdate(T entity, PreparedStatement ps) throws SQLException;
 
     abstract void mapForSave(T entity, PreparedStatement ps) throws SQLException;
 
-    private String getSQLFromAnnotation(CrudOperation operationType){
+    private String getSQLFromAnnotation(CrudOperation operationType) {
 
         //for method with 2 or more Annotations @SQL
         Stream<SQL> multiSqlStream = Arrays.stream(this.getClass().getDeclaredMethods())
@@ -125,6 +139,5 @@ public abstract class CRUDRepository<T extends Entity> {
                 .map(SQL::value)
                 .findFirst().orElse("");
     }
-
 
 }

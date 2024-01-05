@@ -20,12 +20,14 @@ public class PeopleRepository extends CRUDRepository<Person> {
     }
 
     @Override
-    @SQL(value = SAVE_PERSON_SQL , operationType = CrudOperation.SAVE)
-    @SQL(value = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB) VALUES (?, ?, ?)" , operationType = CrudOperation.SAVE)
+   // @SQL(value = SAVE_PERSON_SQL , operationType = CrudOperation.SAVE)
+    @SQL(value = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB, SALARY, EMAIL) VALUES (?, ?, ?, ?, ?)" , operationType = CrudOperation.SAVE)
     void mapForSave(Person entity, PreparedStatement ps) throws SQLException {
         ps.setString(1, entity.getFirstName());
         ps.setString(2, entity.getLastName());
         ps.setTimestamp(3, Timestamp.valueOf(entity.getDob().withZoneSameInstant(ZoneId.of("+0")).toLocalDateTime()));
+        ps.setBigDecimal(4, entity.getSalary());
+        ps.setString(5, entity.getEmail());
     }
 
     @Override
@@ -57,8 +59,8 @@ public class PeopleRepository extends CRUDRepository<Person> {
 
     @Override
     @SQL(value = DELETE_PERSON_SQL, operationType = CrudOperation.DELETE)
-    public void delete(Long id) {
-        super.delete(id);
+    public void delete(Person person) {
+        super.delete(person);
     }
 
 }
