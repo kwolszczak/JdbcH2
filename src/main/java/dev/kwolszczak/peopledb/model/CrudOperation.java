@@ -1,4 +1,4 @@
-package dev.kwolszczak.peopledb.repository;
+package dev.kwolszczak.peopledb.model;
 
 public enum CrudOperation {
     SAVE,

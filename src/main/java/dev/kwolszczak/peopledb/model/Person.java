@@ -5,6 +5,7 @@ import dev.kwolszczak.peopledb.annotation.Id;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 public class Person implements Entity  {
     @Id
@@ -14,6 +15,7 @@ public class Person implements Entity  {
     private ZonedDateTime dob;
     private BigDecimal salary = new BigDecimal("0");
     private String email;
+    private Optional<Address> homeAddress = Optional.empty();
 
     public Person(String firstName, String lastName, ZonedDateTime dob) {
         this.firstName = firstName;
@@ -69,6 +71,14 @@ public class Person implements Entity  {
     @Override
     public void setId(long id) {
         this.id = id;
+    }
+
+    public void setHomeAddress(Address homeAddress) {
+        this.homeAddress = Optional.ofNullable(homeAddress);
+    }
+
+    public Optional<Address> getHomeAddress() {
+        return this.homeAddress;
     }
 
     @Override

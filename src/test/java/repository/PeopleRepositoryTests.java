@@ -1,19 +1,18 @@
 package repository;
 
+import dev.kwolszczak.peopledb.model.Address;
 import dev.kwolszczak.peopledb.model.Person;
-import dev.kwolszczak.peopledb.repository.CRUDRepository;
+import dev.kwolszczak.peopledb.model.Region;
 import dev.kwolszczak.peopledb.repository.PeopleRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,6 +58,17 @@ public class PeopleRepositoryTests {
     }
 
     @Test
+    void canSavePersonWithAddress() throws SQLException {
+        Person john = new Person("John", "Smith", ZonedDateTime.of(1980, 11, 15, 15, 15, 0, 0, ZoneId.of("-6")));
+        Address address = new Address("123 Beale St.", "apt. 1A", "New Your", "WA", "90210", "United States", "Fulton County", Region.WEST);
+        john.setHomeAddress(address);
+
+        Person savedPerson = repo.save(john);
+       // connection.commit();
+        assertThat(savedPerson.getHomeAddress().get().id()).isGreaterThan(0);
+    }
+
+    @Test
     void canFindPersonById() {
         Person savedPerson = repo.save(new Person("test", "jackson", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
         Person foundPerson = repo.findById(savedPerson.getId()).get();
@@ -89,6 +99,7 @@ public class PeopleRepositoryTests {
         Person person2 = repo.save(new Person("test2", "jackson2", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
 
         repo.delete(person1, person2);
+
     }
 
     @Test
@@ -109,26 +120,5 @@ public class PeopleRepositoryTests {
                 .isEqualTo(foundPerson2.getLastName());
     }
 
-    @Test
-    @Disabled
-    @DisplayName("Load 5 Millions records to H2DB")
-    void loadData() throws IOException, SQLException {
-        Files.lines(Path.of("C://Users//kwolszczak_adm//IdeaProjects//Hr5m.csv"))
-                .skip(1)
-               // .limit(100)
-                .map(l -> l.split(","))
-                .map(a -> {
-                    LocalDate dob = LocalDate.parse(a[10], DateTimeFormatter.ofPattern("M/d/yyyy"));
-                    LocalTime tob = LocalTime.parse(a[11], DateTimeFormatter.ofPattern("hh:mm:ss a"));
-                    LocalDateTime dtob = LocalDateTime.of(dob, tob);
-                    ZonedDateTime zonedDateTime = ZonedDateTime.of(dtob, ZoneId.of("+0"));
-                    Person person = new Person(a[2], a[4], zonedDateTime);
-                    person.setSalary(new BigDecimal(a[25]));
-                    person.setEmail(a[6]);
-                    return person;
-                })
-                .forEach(repo::save);
-        connection.commit();
-    }
 
 }

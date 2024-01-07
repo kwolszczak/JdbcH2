@@ -1,6 +1,6 @@
 package dev.kwolszczak.peopledb.annotation;
 
-import dev.kwolszczak.peopledb.repository.CrudOperation;
+import dev.kwolszczak.peopledb.model.CrudOperation;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;

@@ -1,33 +1,43 @@
 package dev.kwolszczak.peopledb.repository;
 
 import dev.kwolszczak.peopledb.annotation.SQL;
+import dev.kwolszczak.peopledb.model.Address;
+import dev.kwolszczak.peopledb.model.CrudOperation;
 import dev.kwolszczak.peopledb.model.Person;
 
 import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
-public class PeopleRepository extends CRUDRepository<Person> {
+public class PeopleRepository extends CrudRepository<Person> {
     private static final String SAVE_PERSON_SQL = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB) VALUES (?, ?, ?)";
     private static final String FIND_PERSON_SQL = "SELECT ID, FIRST_NAME, LAST_NAME, DOB FROM PEOPLE WHERE ID = ?";
     private static final String DELETE_PERSON_SQL = "DELETE FROM PEOPLE WHERE ID = ?";
     private static final String UPDATE_PERSON_SQL = "UPDATE PEOPLE SET FIRST_NAME=?, LAST_NAME=? WHERE ID =?";
 
+    private AddressRepository addressRepository;
+
     public PeopleRepository(Connection con) {
         super(con);
+        addressRepository= new AddressRepository(con);
     }
 
     @Override
    // @SQL(value = SAVE_PERSON_SQL , operationType = CrudOperation.SAVE)
-    @SQL(value = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB, SALARY, EMAIL) VALUES (?, ?, ?, ?, ?)" , operationType = CrudOperation.SAVE)
+    @SQL(value = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB, SALARY, EMAIL, HOME_ADDRESS) VALUES (?, ?, ?, ?, ?, ?)" , operationType = CrudOperation.SAVE)
     void mapForSave(Person entity, PreparedStatement ps) throws SQLException {
+        Address savedAddress = null;
         ps.setString(1, entity.getFirstName());
         ps.setString(2, entity.getLastName());
         ps.setTimestamp(3, Timestamp.valueOf(entity.getDob().withZoneSameInstant(ZoneId.of("+0")).toLocalDateTime()));
         ps.setBigDecimal(4, entity.getSalary());
         ps.setString(5, entity.getEmail());
+        if (entity.getHomeAddress().isPresent()) {
+            savedAddress = addressRepository.save(entity.getHomeAddress().get());
+            ps.setLong(6, savedAddress.id());
+        } else {
+            ps.setObject(6, null);
+        }
     }
 
     @Override

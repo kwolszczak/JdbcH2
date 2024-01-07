@@ -4,6 +4,7 @@ import dev.kwolszczak.peopledb.annotation.Id;
 import dev.kwolszczak.peopledb.annotation.MultiSQL;
 import dev.kwolszczak.peopledb.annotation.SQL;
 import dev.kwolszczak.peopledb.exception.UnableToSaveException;
+import dev.kwolszczak.peopledb.model.CrudOperation;
 import dev.kwolszczak.peopledb.model.Entity;
 
 import java.sql.*;
@@ -12,11 +13,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class CRUDRepository<T extends Entity> {
+public abstract class CrudRepository<T extends Entity> {
 
     protected Connection connection;
 
-    public CRUDRepository(Connection connection) {
+    public CrudRepository(Connection connection) {
         this.connection = connection;
     }
 
