@@ -84,10 +84,14 @@ public class Person implements Entity  {
     @Override
     public String toString() {
         return "Person{" +
-                "firstName='" + firstName + '\'' +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", dob=" + dob +
-                ", id=" + id +
+                ", salary=" + salary +
+                ", email='" + email + '\'' +
+                ", homeAddress=" + homeAddress +
                 '}';
     }
+
 }

@@ -1,8 +1,11 @@
 package dev.kwolszczak.peopledb.model;
 
+import dev.kwolszczak.peopledb.annotation.Id;
+
 import java.util.Objects;
 
 public final class Address implements Entity {
+    @Id
     private Long id;
     private final String streetAddress;
     private final String address2;

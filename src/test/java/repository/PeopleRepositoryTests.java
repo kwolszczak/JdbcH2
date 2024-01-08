@@ -69,6 +69,18 @@ public class PeopleRepositoryTests {
     }
 
     @Test
+    void canFindPersonByIdWithAddress() throws SQLException {
+        Person john = new Person("John", "Smith", ZonedDateTime.of(1980, 11, 15, 15, 15, 0, 0, ZoneId.of("-6")));
+        Address address = new Address("123 Beale St.", "apt. 1A", "New Your", "WA", "90210", "United States", "Fulton County", Region.WEST);
+        john.setHomeAddress(address);
+
+        Person savedPerson = repo.save(john);
+        Person foundPerson = repo.findById(savedPerson.getId()).get();
+        // connection.commit();
+        assertThat(foundPerson.getHomeAddress().get().state()).isEqualTo("WA");
+    }
+
+    @Test
     void canFindPersonById() {
         Person savedPerson = repo.save(new Person("test", "jackson", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
         Person foundPerson = repo.findById(savedPerson.getId()).get();
@@ -99,7 +111,6 @@ public class PeopleRepositoryTests {
         Person person2 = repo.save(new Person("test2", "jackson2", ZonedDateTime.now().withZoneSameInstant(ZoneId.of("+0"))));
 
         repo.delete(person1, person2);
-
     }
 
     @Test
@@ -119,6 +130,4 @@ public class PeopleRepositoryTests {
 //                .ignoringFields("dob")
                 .isEqualTo(foundPerson2.getLastName());
     }
-
-
 }

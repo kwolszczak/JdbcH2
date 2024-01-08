@@ -8,10 +8,11 @@ import dev.kwolszczak.peopledb.model.Person;
 import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 public class PeopleRepository extends CrudRepository<Person> {
     private static final String SAVE_PERSON_SQL = "INSERT INTO PEOPLE (FIRST_NAME, LAST_NAME, DOB) VALUES (?, ?, ?)";
-    private static final String FIND_PERSON_SQL = "SELECT ID, FIRST_NAME, LAST_NAME, DOB FROM PEOPLE WHERE ID = ?";
+    private static final String FIND_PERSON_SQL = "SELECT ID, FIRST_NAME, LAST_NAME, DOB, HOME_ADDRESS FROM PEOPLE WHERE ID = ?";
     private static final String DELETE_PERSON_SQL = "DELETE FROM PEOPLE WHERE ID = ?";
     private static final String UPDATE_PERSON_SQL = "UPDATE PEOPLE SET FIRST_NAME=?, LAST_NAME=? WHERE ID =?";
 
@@ -61,10 +62,15 @@ public class PeopleRepository extends CrudRepository<Person> {
         String firstName = rs.getString("FIRST_NAME");
         String lastName = rs.getString("LAST_NAME");
         ZonedDateTime dob = ZonedDateTime.of(rs.getTimestamp("DOB").toLocalDateTime(), ZoneId.of("+0"));
-        Person entity = new Person(firstName, lastName, dob);
-        entity.setId(personId);
+        Person person = new Person(firstName, lastName, dob);
+        person.setId(personId);
 
-        return entity;
+        long homeAddressId = rs.getLong("HOME_ADDRESS");
+        if (homeAddressId != 0) {
+            Optional<Address> address = addressRepository.findById(homeAddressId);
+            person.setHomeAddress(address.get());
+        }
+        return person;
     }
 
     @Override
