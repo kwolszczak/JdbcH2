@@ -16,25 +16,36 @@ import java.util.stream.Stream;
 public abstract class CrudRepository<T extends Entity> {
 
     protected Connection connection;
+    private PreparedStatement savePS;
+    private PreparedStatement findByIdPS;
+    private PreparedStatement updatePS;
+    private PreparedStatement deletePS;
 
     public CrudRepository(Connection connection) {
-        this.connection = connection;
+        try {
+            this.connection = connection;
+            findByIdPS = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.FIND_BY_ID));
+            updatePS = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.UPDATE));
+            deletePS = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.DELETE));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public T save(T entity) {
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.SAVE), Statement.RETURN_GENERATED_KEYS);
-            mapForSave(entity, ps);
+            savePS = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.SAVE), Statement.RETURN_GENERATED_KEYS);
+            mapForSave(entity, savePS);
 
-            int recordsAffected = ps.executeUpdate();
-
-            ResultSet rs = ps.getGeneratedKeys();
+            int recordsAffected = savePS.executeUpdate();
+            ResultSet rs = savePS.getGeneratedKeys();
             while (rs.next()) {
                 long id = rs.getLong(1);
                 entity.setId(id);
+                postSave(entity);
             }
-          //  System.out.println(entity);
-           // System.out.println(STR."Records affected: \{recordsAffected}");
+            //  System.out.println(entity);
+            // System.out.println(STR."Records affected: \{recordsAffected}");
         } catch (SQLException e) {
             e.printStackTrace();
             throw new UnableToSaveException(STR."Tried to save entity:\{entity}");
@@ -42,19 +53,16 @@ public abstract class CrudRepository<T extends Entity> {
         return entity;
     }
 
+
     public Optional<T> findById(Long id) {
         T entity = null;
-
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.FIND_BY_ID));
-            ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-
+            findByIdPS.setLong(1, id);
+            ResultSet rs = findByIdPS.executeQuery();
             while (rs.next()) {
                 entity = mapForFind(rs);
             }
             System.out.println(entity);
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -64,9 +72,8 @@ public abstract class CrudRepository<T extends Entity> {
 
     public void update(T entity) {
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.UPDATE));
-            mapForUpdate(entity, ps);
-            ps.executeUpdate();
+            mapForUpdate(entity, updatePS);
+            updatePS.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -88,9 +95,8 @@ public abstract class CrudRepository<T extends Entity> {
 
     public void delete(T entity) {
         try {
-            PreparedStatement ps = connection.prepareStatement(getSQLFromAnnotation(CrudOperation.DELETE));
-            ps.setLong(1, getIdByAnnotation(entity));
-            boolean rs = ps.execute();
+            deletePS.setLong(1, getIdByAnnotation(entity));
+            boolean rs = deletePS.execute();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -121,6 +127,9 @@ public abstract class CrudRepository<T extends Entity> {
     abstract void mapForUpdate(T entity, PreparedStatement ps) throws SQLException;
 
     abstract void mapForSave(T entity, PreparedStatement ps) throws SQLException;
+
+    protected void postSave(T entity) {
+    }
 
     private String getSQLFromAnnotation(CrudOperation operationType) {
 

@@ -65,7 +65,7 @@ public class PeopleRepositoryTests {
         john.setHomeAddress(address);
 
         Person savedPerson = repo.save(john);
-       // connection.commit();
+        // connection.commit();
         assertThat(savedPerson.getHomeAddress().get().id()).isGreaterThan(0);
     }
 
@@ -76,8 +76,23 @@ public class PeopleRepositoryTests {
         john.setBusinessAddress(address);
 
         Person savedPerson = repo.save(john);
-   // connection.commit();
+        // connection.commit();
         assertThat(savedPerson.getBusinessAddress().get().id()).isGreaterThan(0);
+    }
+
+    @Test
+    void canSavePersonWithChildren() throws SQLException {
+        Person john = new Person("John", "Smith", ZonedDateTime.of(1980, 11, 15, 15, 15, 0, 0, ZoneId.of("-6")));
+        john.addChild(new Person("Bobby", "Smith", ZonedDateTime.of(2000, 2, 15, 15, 15, 0, 0, ZoneId.of("-6"))));
+        john.addChild(new Person("Tom", "Smith", ZonedDateTime.of(2014, 7, 15, 15, 15, 0, 0, ZoneId.of("-6"))));
+        john.addChild(new Person("Lisa", "Smith", ZonedDateTime.of(2016, 9, 15, 15, 15, 0, 0, ZoneId.of("-6"))));
+
+        Person savedPerson = repo.save(john);
+        savedPerson.getChildren().stream()
+                .map(Person::getId)
+                .forEach(id -> assertThat(id).isGreaterThan(0));
+        assertThat(savedPerson.getChildren()).size().isEqualTo(3);
+        connection.commit();
     }
 
     @Test
@@ -91,6 +106,7 @@ public class PeopleRepositoryTests {
         // connection.commit();
         assertThat(foundPerson.getHomeAddress().get().state()).isEqualTo("WA");
     }
+
     @Test
     void canFindPersonByIdWithBizAddress() throws SQLException {
         Person john = new Person("John", "Smith", ZonedDateTime.of(1980, 11, 15, 15, 15, 0, 0, ZoneId.of("-6")));
